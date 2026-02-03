@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+
 /* ---------------- CONFIG ---------------- */
+
 const MUSIC_PLAYLIST = [
   "/music/love1.mp3",
   "/music/love2.mp3",
@@ -17,25 +19,103 @@ const BACKGROUNDS = [
   { type: "image", value: "/bg-5.jpg" },
 ];
 
+const LOVE_LETTER = `
+My dearest meri jaan,
+
+From the moment you entered my life, everything softened.
+Every laugh, every quiet second, every heartbeat feels better because it’s you.
+
+This little app, these silly buttons, the dramatic begging—
+it’s all just me saying I love you in every language I know.
+
+Today, tomorrow, and every Valentine after this…
+it’s you. Always you.
+
+Forever yours,
+your honey bear 💖
+`;
+
 const NO_MESSAGES = [
-  "No… 😳","Wait, what?","You clicked that already?","Really? Now?","I’m shocked 🥺",
-  "My heart skipped a beat","Are you sure about this?","I feel confused…",
-  "Okay now I’m sad","This hurts emotionally","My soul whispered yes",
-  "I’m devastated 😭","You’re breaking me softly","This is emotional blackmail territory",
-  "Even the stars are judging you","I’ll wait forever if I must","I dressed up emotionally for this",
-  "My heart still says yes","Somewhere a teddy bear cried","My tears are playful but serious",
-  "Please reconsider, my honey bear","I refuse to give up on us","This is the saddest rom-com scene",
-  "You can’t escape destiny 😌","I’ll keep asking if I have to","Imagine how cute we’d be together",
-  "My heart beats for you","You’re making me write poems for this","Okay… just kidding, I forgive you 😅",
-  "💔 But I still love you obviously","Even the music feels sad now","This hurts romantically",
-  "You’re too strong… but not stronger than us",
+  "No… 😳",
+  "Wait—what?",
+  "That was unexpected",
+  "I wasn’t ready for that",
+  "You clicked it again?",
+  "Bold choice 😅",
+  "My heart blinked",
+  "Okay that startled me",
+  "Are we playing games now?",
+  "I’m confused but curious",
+
+  "Was that an accident?",
+  "Let’s rewind a bit",
+  "I thought we were vibing",
+  "My brain says huh",
+  "My heart says wait",
+  "This feels suspicious",
+  "Are you sure though?",
+  "I’m processing this",
+  "That landed softly… but still",
+  "Hmm… interesting decision",
+
+  "Okay that stung a little",
+  "My smile just faded",
+  "I suddenly miss you",
+  "I dressed my emotions for this",
+  "My teddy bear looks worried",
+  "I was hopeful you know",
+  "That one hurt gently",
+  "My heart went quiet",
+  "I really believed",
+  "This feels like a sad scene",
+
+  "Okay now it hurts",
+  "My heart made a noise",
+  "This feels personal now",
+  "The music got sad",
+  "I need a dramatic pause",
+  "This is becoming a rom-com",
+  "I might cry (playfully)",
+  "Why are you so strong",
+  "This wasn’t in my plan",
+  "I prepared for yes",
+
+  "This is emotional blackmail territory",
+  "I’ll wait if I have to",
+  "You know I don’t give up",
+  "Persistence is my love language",
+  "I hope you like effort",
+  "I’ll keep asking softly",
+  "My heart refuses alternatives",
+  "Even the stars disagree",
+  "Destiny is judging you",
+  "This is canon",
+
+  "You can’t escape this forever",
+  "All timelines end with yes",
+  "Fate already clicked yes",
+  "The universe is patient",
+  "Love has plot armor",
+  "This was inevitable",
+  "Time is on my side",
+  "Every version of me asks",
+  "I choose you again",
+  "Still hoping",
+
+  "I just really want this to be you",
+  "I don’t ask lightly",
+  "This matters more than I show",
+  "It’s always been you",
+  "I’m still here",
+  "I’ll wait quietly now",
+  "Take your time, my love",
+  "Whenever you’re ready",
+  "My answer never changed",
+  "Still yes 💗",
 ];
 
-const LOVE_LETTER = ` My dearest meri jaan,
-From the first moment, you’ve filled my life with warmth, laughter, and endless love.
-Every “Yes” in my heart has been for you, and now this moment is ours forever.
-I promise to keep cherishing you, hugging you, and making every day feel like Valentine’s Day.
-Love always, your honey bear 💖`;
+
+/* ---------------- PAGE ---------------- */
 
 export default function Page() {
   const [noCount, setNoCount] = useState(0);
@@ -48,34 +128,28 @@ export default function Page() {
 
   const audioRef = useRef(null);
 
-  /* ------------- MUSIC LOGIC ------------- */
-useEffect(() => {
-  if (!audioRef.current) {
-    audioRef.current = new Audio(MUSIC_PLAYLIST[musicIndex]);
-    audioRef.current.volume = 0.6;
-    audioRef.current.loop = false;
+  /* -------- MUSIC (iOS SAFE) -------- */
 
-    // iOS-safe: play muted first
+  useEffect(() => {
+    audioRef.current = new Audio(MUSIC_PLAYLIST[0]);
+    audioRef.current.volume = 0.6;
     audioRef.current.muted = true;
     audioRef.current.play().catch(() => {});
 
-    // Once user clicks anywhere, unmute
-    const handleInteraction = () => {
+    const unlock = () => {
       audioRef.current.muted = false;
       audioRef.current.play().catch(() => {});
-      window.removeEventListener("touchstart", handleInteraction);
-      window.removeEventListener("click", handleInteraction);
+      window.removeEventListener("touchstart", unlock);
+      window.removeEventListener("click", unlock);
     };
 
-    window.addEventListener("touchstart", handleInteraction);
-    window.addEventListener("click", handleInteraction);
+    window.addEventListener("touchstart", unlock);
+    window.addEventListener("click", unlock);
 
     audioRef.current.onended = () => {
       setMusicIndex((i) => (i + 1) % MUSIC_PLAYLIST.length);
     };
-  }
-}, []);
-
+  }, []);
 
   useEffect(() => {
     if (!audioRef.current) return;
@@ -87,131 +161,121 @@ useEffect(() => {
     if (audioRef.current) audioRef.current.muted = muted;
   }, [muted]);
 
-  const handleNextMusic = () => {
-    setMusicIndex((i) => (i + 1) % MUSIC_PLAYLIST.length);
-  };
+  /* -------- BACKGROUND CYCLE -------- */
 
-  /* ------------- BACKGROUND CYCLE ------------- */
   useEffect(() => {
-    const timer = setInterval(() => {
-      setBgIndex((i) => (i + 1) % BACKGROUNDS.length);
-    }, 10000);
-    return () => clearInterval(timer);
+    const t = setInterval(
+      () => setBgIndex((i) => (i + 1) % BACKGROUNDS.length),
+      10000
+    );
+    return () => clearInterval(t);
   }, []);
 
-  /* ------------- NO CLICK ------------- */
-  const handleNoClick = () => {
-    const nextCount = noCount + 1;
+  /* -------- NO CLICK -------- */
 
-    if (nextCount === 25) {
+  const handleNoClick = () => {
+    const next = noCount + 1;
+    setNoCount(next);
+
+    if (next === 25) {
       setCrash(true);
-      setTimeout(() => setCrash(false), 2500);
+      setTimeout(() => setCrash(false), 2200);
     }
 
-    setNoCount(nextCount);
-
-    if (navigator.vibrate) navigator.vibrate(50);
+    navigator.vibrate?.(40);
   };
 
   const noText = NO_MESSAGES[noCount % NO_MESSAGES.length];
 
-  const yesPaddingY = Math.min(16 + noCount * 3, 32);
-  const yesPaddingX = Math.min(36 + noCount * 6, 64);
-  const yesFontSize = Math.min(18 + noCount * 1.5, 36);
+  /* -------- YES SIZE (CAPPED) -------- */
 
-  /* ------------- TYPED LOVE LETTER ------------- */
+  const yesFont = Math.min(20 + noCount * 1.2, 34);
+  const yesPadY = Math.min(16 + noCount * 2, 28);
+  const yesPadX = Math.min(40 + noCount * 4, 72);
+
+  /* -------- TYPE LETTER -------- */
+
   useEffect(() => {
     if (!yesPressed) return;
-    let index = 0;
-    const interval = setInterval(() => {
-      setTypedLetter((t) => t + LOVE_LETTER[index]);
-      index++;
-      if (index >= LOVE_LETTER.length) clearInterval(interval);
-    }, 30);
-    return () => clearInterval(interval);
+    let i = 0;
+    const t = setInterval(() => {
+      setTypedLetter((p) => p + LOVE_LETTER[i]);
+      i++;
+      if (i >= LOVE_LETTER.length) clearInterval(t);
+    }, 28);
+    return () => clearInterval(t);
   }, [yesPressed]);
 
   return (
-    <div className="min-h-screen w-screen flex flex-col items-center justify-center relative overflow-hidden">
+    <div className="min-h-screen w-screen relative overflow-hidden flex items-center justify-center">
       {/* BACKGROUND */}
       <div
-        className="absolute inset-0 z-0 transition-all duration-1000"
+        className="absolute inset-0 transition-all duration-1000"
         style={{
           background:
             BACKGROUNDS[bgIndex].type === "image"
-              ? `url(${BACKGROUNDS[bgIndex].value}) no-repeat center center / cover`
+              ? `url(${BACKGROUNDS[bgIndex].value}) center / cover no-repeat`
               : BACKGROUNDS[bgIndex].value,
         }}
       />
 
-      {/* MUSIC CONTROL */}
+      {/* CONTROLS */}
       <div className="absolute top-4 right-4 flex gap-2 z-50">
-        <button
-          onClick={() => setMuted((m) => !m)}
-          className="bg-black/40 text-white px-3 py-1 rounded-full backdrop-blur"
-        >
+        <button onClick={() => setMuted((m) => !m)} className="px-3 py-1 bg-black/40 rounded-full text-white">
           {muted ? "🔇" : "🎵"}
         </button>
-        <button
-          onClick={handleNextMusic}
-          className="bg-black/40 text-white px-3 py-1 rounded-full backdrop-blur"
-        >
+        <button onClick={() => setMusicIndex((i) => (i + 1) % MUSIC_PLAYLIST.length)} className="px-3 py-1 bg-black/40 rounded-full text-white">
           ⏭️
         </button>
       </div>
 
       {crash && (
-        <div className="absolute inset-0 bg-black text-white flex items-center justify-center text-2xl font-bold animate-pulse z-50">
-          💥 App crashed! 💥
+        <div className="absolute inset-0 bg-black flex items-center justify-center text-white text-2xl z-50">
+          💥 App crashed… Just kidding 😌
         </div>
       )}
 
-      {/* MAIN CONTENT */}
-      <div className="relative z-10 max-w-md w-full text-center bg-white/15 backdrop-blur-xl rounded-3xl p-6 shadow-2xl flex flex-col items-center gap-6">
+      {/* CARD */}
+      <div className="relative z-10 bg-white/15 backdrop-blur-xl rounded-3xl p-6 w-[92%] max-w-md text-center shadow-2xl">
         {yesPressed ? (
           <>
-            <CanvasConfetti />
+            <Confetti />
             <img
               src="https://media.tenor.com/gUiu1zyxfzYAAAAi/bear-kiss-bear-kisses.gif"
               className="mx-auto w-40 md:w-48"
             />
-            <h1 className="text-4xl font-bold mt-6 text-white">
-              Love unlocked 💖
-            </h1>
-            <p className="text-white/80 mt-2 whitespace-pre-wrap">{typedLetter}</p>
+            <h1 className="text-4xl font-bold text-white mb-4">Love unlocked 💖</h1>
+            <p className="text-white/90 whitespace-pre-wrap">{typedLetter}</p>
+            <p className="mt-4 text-white/70 italic">Memory saved forever 💾</p>
           </>
         ) : (
           <>
-            <img src="https://gifdb.com/images/high/cute-love-bear-roses-ou7zho5oosxnpo6k.gif" className="w-30 mx-auto animate-pulse mb-2" />
-            {/* <img src={lovesvg2} className="w-20 mx-auto animate-pulse mb-4" /> */}
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-6">
-              Will you be my Valentine?
+           <img src="https://gifdb.com/images/high/cute-love-bear-roses-ou7zho5oosxnpo6k.gif" className="w-30 mx-auto animate-pulse mb-2" />
+            <h1 className="text-3xl font-bold text-white mb-6">
+              Will you be my Valentine, meri Curvy Queen?
             </h1>
 
-            <div className="flex flex-col items-center gap-6 w-full">
-              {/* YES */}
+            <div className="flex flex-col items-center gap-6">
               <button
                 onClick={() => setYesPressed(true)}
                 style={{
-                  padding: `${yesPaddingY}px ${yesPaddingX}px`,
-                  fontSize: `${yesFontSize}px`,
+                  fontSize: yesFont,
+                  padding: `${yesPadY}px ${yesPadX}px`,
                 }}
-                className="bg-green-500 text-white font-bold rounded-full shadow-lg transition-all duration-300 max-w-[90%]"
+                className="bg-green-500 rounded-full font-bold text-white transition-all shadow-lg"
               >
                 YES 💘
               </button>
 
-              {/* NO */}
               <button
                 onClick={handleNoClick}
-                className="bg-rose-600 text-white font-semibold py-3 px-6 rounded-full max-w-[90%] text-center transition-all duration-300"
+                className="bg-rose-600 px-6 py-3 rounded-full text-white max-w-[90%]"
               >
                 {noText}
               </button>
 
-              {/* Emotional Counter */}
               {noCount > 0 && (
-                <div className="text-sm text-white/80 animate-pulse">
+                <div className="text-white/80 text-sm">
                   Emotional damage caused: {noCount} 💔
                 </div>
               )}
@@ -223,44 +287,41 @@ useEffect(() => {
   );
 }
 
-/* ------------- Canvas Confetti ------------- */
-const CanvasConfetti = () => {
-  const canvasRef = useRef(null);
+/* -------- CONFETTI (CALM) -------- */
+
+function Confetti() {
+  const ref = useRef(null);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    let particles = [];
-    const w = (canvas.width = window.innerWidth);
-    const h = (canvas.height = window.innerHeight);
+    const c = ref.current;
+    const ctx = c.getContext("2d");
+    c.width = window.innerWidth;
+    c.height = window.innerHeight;
 
-    for (let i = 0; i < 100; i++) {
-      particles.push({
-        x: Math.random() * w,
-        y: Math.random() * h - h,
-        r: Math.random() * 6 + 4,
-        d: Math.random() * 1 + 1,
-        color: `hsl(${Math.random() * 360},100%,50%)`,
-      });
-    }
+    const parts = Array.from({ length: 60 }, () => ({
+      x: Math.random() * c.width,
+      y: Math.random() * c.height - c.height,
+      r: Math.random() * 5 + 3,
+      d: Math.random() * 0.6 + 0.4,
+      col: `hsl(${Math.random() * 360},100%,60%)`,
+    }));
 
-    let animation;
+    let a;
     const draw = () => {
-      ctx.clearRect(0, 0, w, h);
-      particles.forEach((p) => {
+      ctx.clearRect(0, 0, c.width, c.height);
+      parts.forEach((p) => {
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2, false);
-        ctx.fillStyle = p.color;
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = p.col;
         ctx.fill();
-        p.y += p.d + 2;
-        if (p.y > h) p.y = -10;
+        p.y += p.d;
+        if (p.y > c.height) p.y = -10;
       });
-      animation = requestAnimationFrame(draw);
+      a = requestAnimationFrame(draw);
     };
     draw();
-
-    return () => cancelAnimationFrame(animation);
+    return () => cancelAnimationFrame(a);
   }, []);
 
-  return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none z-20" />;
-};
+  return <canvas ref={ref} className="absolute inset-0 pointer-events-none" />;
+}
