@@ -1,101 +1,251 @@
-import { useState } from "react";
-import lovesvg from "./assets/All You Need Is Love SVG Cut File.svg";
-import lovesvg2 from "./assets/Love In The Air SVG Cut File.svg";
+import { useEffect, useRef, useState } from "react";
+/* ---------------- CONFIG ---------------- */
+const MUSIC_PLAYLIST = [
+  "/music/love1.mp3",
+  "/music/love2.mp3",
+  "/music/love3.mp3",
+  "/music/love4.mp3",
+  "/music/love5.mp3",
+];
+
+const BACKGROUNDS = [
+  "linear-gradient(135deg, #2b0a12, #5c1a2d, #a23b55)",
+  "linear-gradient(135deg, #3a0f1c, #7a1e3a)",
+  "/bg-2.jpg",
+  "/bg-3.jpg",
+  "/bg-4.jpg",
+  "/bg-5.jpg",
+];
+
+const NO_MESSAGES = [
+  "No… 😳","Wait, what?","You clicked that already?","Really? Now?","I’m shocked 🥺",
+  "My heart skipped a beat","Are you sure about this?","I feel confused…",
+  "Okay now I’m sad","This hurts emotionally","My soul whispered yes",
+  "I’m devastated 😭","You’re breaking me softly","This is emotional blackmail territory",
+  "Even the stars are judging you","I’ll wait forever if I must","I dressed up emotionally for this",
+  "My heart still says yes","Somewhere a teddy bear cried","My tears are playful but serious",
+  "Please reconsider, my honey bear","I refuse to give up on us","This is the saddest rom-com scene",
+  "You can’t escape destiny 😌","I’ll keep asking if I have to","Imagine how cute we’d be together",
+  "My heart beats for you","You’re making me write poems for this","Okay… just kidding, I forgive you 😅",
+  "💔 But I still love you obviously","Even the music feels sad now","This hurts romantically",
+  "You’re too strong… but not stronger than us",
+];
+
+const LOVE_LETTER = ` My dearest meri jaan,
+From the first moment, you’ve filled my life with warmth, laughter, and endless love.
+Every “Yes” in my heart has been for you, and now this moment is ours forever.
+I promise to keep cherishing you, hugging you, and making every day feel like Valentine’s Day.
+Love always, your honey bear 💖`;
 
 export default function Page() {
   const [noCount, setNoCount] = useState(0);
   const [yesPressed, setYesPressed] = useState(false);
-  const yesButtonSize = noCount * 20 + 16;
+  const [typedLetter, setTypedLetter] = useState("");
+  const [bgIndex, setBgIndex] = useState(0);
+  const [musicIndex, setMusicIndex] = useState(0);
+  const [muted, setMuted] = useState(false);
+  const [crash, setCrash] = useState(false);
 
+  const audioRef = useRef(null);
+
+  /* ------------- MUSIC LOGIC ------------- */
+  useEffect(() => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio(MUSIC_PLAYLIST[musicIndex]);
+      audioRef.current.volume = 0.6;
+      audioRef.current.loop = false;
+      audioRef.current.muted = true; // autoplay safe
+      audioRef.current.play().catch(() => {});
+      audioRef.current.onended = () => {
+        setMusicIndex((i) => (i + 1) % MUSIC_PLAYLIST.length);
+      };
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!audioRef.current) return;
+    audioRef.current.src = MUSIC_PLAYLIST[musicIndex];
+    audioRef.current.play().catch(() => {});
+  }, [musicIndex]);
+
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.muted = muted;
+  }, [muted]);
+
+  const handleNextMusic = () => {
+    setMusicIndex((i) => (i + 1) % MUSIC_PLAYLIST.length);
+  };
+
+  /* ------------- BACKGROUND CYCLE ------------- */
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setBgIndex((i) => (i + 1) % BACKGROUNDS.length);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  /* ------------- NO CLICK ------------- */
   const handleNoClick = () => {
-    setNoCount(noCount + 1);
+    const nextCount = noCount + 1;
+
+    if (nextCount === 25) {
+      setCrash(true);
+      setTimeout(() => setCrash(false), 2500);
+    }
+
+    setNoCount(nextCount);
+
+    if (navigator.vibrate) navigator.vibrate(50);
   };
 
-  const getNoButtonText = () => {
-    const phrases = [
-      "No",
-      "Are you sure?",
-      "Really sure?",
-      "Think again!",
-      "Last chance!",
-      "Surely not?",
-      "You might regret this!",
-      "Give it another thought!",
-      "Are you absolutely certain?",
-      "This could be a mistake!",
-      "Have a heart!",
-      "Don't be so cold!",
-      "Change of heart?",
-      "Wouldn't you reconsider?",
-      "Is that your final answer?",
-      "You're breaking my heart ;(",
-      "Is that your final answer?",
-      "You're breaking my heart ;(",
-      "Plsss? :( You're breaking my heart",
-    ];
+  const noText = NO_MESSAGES[noCount % NO_MESSAGES.length];
 
-    return phrases[Math.min(noCount, phrases.length - 1)];
-  };
+  const yesPaddingY = Math.min(16 + noCount * 3, 32);
+  const yesPaddingX = Math.min(36 + noCount * 6, 64);
+  const yesFontSize = Math.min(18 + noCount * 1.5, 36);
+
+  /* ------------- TYPED LOVE LETTER ------------- */
+  useEffect(() => {
+    if (!yesPressed) return;
+    let index = 0;
+    const interval = setInterval(() => {
+      setTypedLetter((t) => t + LOVE_LETTER[index]);
+      index++;
+      if (index >= LOVE_LETTER.length) clearInterval(interval);
+    }, 30);
+    return () => clearInterval(interval);
+  }, [yesPressed]);
 
   return (
-    <div className="overflow-hidden flex flex-col items-center justify-center pt-4 h-screen -mt-16 selection:bg-rose-600 selection:text-white text-zinc-900">
-      {yesPressed ? (
-        <>
-          <img src="https://media.tenor.com/gUiu1zyxfzYAAAAi/bear-kiss-bear-kisses.gif" />
-          <div className="text-4xl md:text-6xl font-bold my-4">
-            Ok Yayyyyy!!!
-          </div>
-        </>
-      ) : (
-        <>
-          <img
-            src={lovesvg}
-            className="fixed animate-pulse top-10 md:left-24 left-6 md:w-40 w-28"
-          />
-          <img
-            src={lovesvg2}
-            className="fixed bottom-16 -z-10 animate-pulse md:right-24 right-10 md:w-40 w-32"
-          />
-          <img
-            className="h-[230px] rounded-lg shadow-lg"
-            src="https://gifdb.com/images/high/cute-love-bear-roses-ou7zho5oosxnpo6k.webp"
-          />
-          <h1 className="text-4xl md:text-6xl my-4 text-center">
-            Will you be my Valentine?
-          </h1>
-          <div className="flex flex-wrap justify-center gap-2 items-center">
-            <button
-              className={`bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg mr-4`}
-              style={{ fontSize: yesButtonSize }}
-              onClick={() => setYesPressed(true)}
-            >
-              Yes
-            </button>
-            <button
-              onClick={handleNoClick}
-              className=" bg-rose-500 hover:bg-rose-600 rounded-lg text-white font-bold py-2 px-4"
-            >
-              {noCount === 0 ? "No" : getNoButtonText()}
-            </button>
-          </div>
-        </>
+    <div className="min-h-screen w-screen flex flex-col items-center justify-center relative overflow-hidden">
+      {/* BACKGROUND */}
+      <div
+  className="absolute inset-0 z-0 transition-all duration-1000"
+  style={{
+    background:
+      BACKGROUNDS[bgIndex].type === "image"
+        ? `url(${BACKGROUNDS[bgIndex].value}) no-repeat center center / cover`
+        : BACKGROUNDS[bgIndex].value,
+  }}
+/>
+
+      {/* MUSIC CONTROL */}
+      <div className="absolute top-4 right-4 flex gap-2 z-50">
+        <button
+          onClick={() => setMuted((m) => !m)}
+          className="bg-black/40 text-white px-3 py-1 rounded-full backdrop-blur"
+        >
+          {muted ? "🔇" : "🎵"}
+        </button>
+        <button
+          onClick={handleNextMusic}
+          className="bg-black/40 text-white px-3 py-1 rounded-full backdrop-blur"
+        >
+          ⏭️
+        </button>
+      </div>
+
+      {crash && (
+        <div className="absolute inset-0 bg-black text-white flex items-center justify-center text-2xl font-bold animate-pulse z-50">
+          💥 App crashed! 💥
+        </div>
       )}
-      <Footer />
+
+      {/* MAIN CONTENT */}
+      <div className="relative z-10 max-w-md w-full text-center bg-white/15 backdrop-blur-xl rounded-3xl p-6 shadow-2xl flex flex-col items-center gap-6">
+        {yesPressed ? (
+          <>
+            <CanvasConfetti />
+            <img
+              src="https://media.tenor.com/gUiu1zyxfzYAAAAi/bear-kiss-bear-kisses.gif"
+              className="mx-auto w-40 md:w-48"
+            />
+            <h1 className="text-4xl font-bold mt-6 text-white">
+              Love unlocked 💖
+            </h1>
+            <p className="text-white/80 mt-2 whitespace-pre-wrap">{typedLetter}</p>
+          </>
+        ) : (
+          <>
+            <img src="https://gifdb.com/images/high/cute-love-bear-roses-ou7zho5oosxnpo6k.gif" className="w-30 mx-auto animate-pulse mb-2" />
+            {/* <img src={lovesvg2} className="w-20 mx-auto animate-pulse mb-4" /> */}
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-6">
+              Will you be my Valentine?
+            </h1>
+
+            <div className="flex flex-col items-center gap-6 w-full">
+              {/* YES */}
+              <button
+                onClick={() => setYesPressed(true)}
+                style={{
+                  padding: `${yesPaddingY}px ${yesPaddingX}px`,
+                  fontSize: `${yesFontSize}px`,
+                }}
+                className="bg-green-500 text-white font-bold rounded-full shadow-lg transition-all duration-300 max-w-[90%]"
+              >
+                YES 💘
+              </button>
+
+              {/* NO */}
+              <button
+                onClick={handleNoClick}
+                className="bg-rose-600 text-white font-semibold py-3 px-6 rounded-full max-w-[90%] text-center transition-all duration-300"
+              >
+                {noText}
+              </button>
+
+              {/* Emotional Counter */}
+              {noCount > 0 && (
+                <div className="text-sm text-white/80 animate-pulse">
+                  Emotional damage caused: {noCount} 💔
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
 
-const Footer = () => {
-  return (
-    <a
-      className="fixed bottom-2 right-2 backdrop-blur-md opacity-80 hover:opacity-95 border p-1 rounded border-rose-300"
-      href="https://github.com/Xeven777/valentine"
-      target="__blank"
-    >
-      Made with{" "}
-      <span role="img" aria-label="heart">
-        ❤️
-      </span>
-    </a>
-  );
+/* ------------- Canvas Confetti ------------- */
+const CanvasConfetti = () => {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    let particles = [];
+    const w = (canvas.width = window.innerWidth);
+    const h = (canvas.height = window.innerHeight);
+
+    for (let i = 0; i < 100; i++) {
+      particles.push({
+        x: Math.random() * w,
+        y: Math.random() * h - h,
+        r: Math.random() * 6 + 4,
+        d: Math.random() * 1 + 1,
+        color: `hsl(${Math.random() * 360},100%,50%)`,
+      });
+    }
+
+    let animation;
+    const draw = () => {
+      ctx.clearRect(0, 0, w, h);
+      particles.forEach((p) => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2, false);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+        p.y += p.d + 2;
+        if (p.y > h) p.y = -10;
+      });
+      animation = requestAnimationFrame(draw);
+    };
+    draw();
+
+    return () => cancelAnimationFrame(animation);
+  }, []);
+
+  return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none z-20" />;
 };
