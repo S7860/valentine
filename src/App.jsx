@@ -9,12 +9,12 @@ const MUSIC_PLAYLIST = [
 ];
 
 const BACKGROUNDS = [
-  "linear-gradient(135deg, #2b0a12, #5c1a2d, #a23b55)",
-  "linear-gradient(135deg, #3a0f1c, #7a1e3a)",
-  "/bg-2.jpg",
-  "/bg-3.jpg",
-  "/bg-4.jpg",
-  "/bg-5.jpg",
+  { type: "gradient", value: "linear-gradient(135deg, #2b0a12, #5c1a2d, #a23b55)" },
+  { type: "gradient", value: "linear-gradient(135deg, #3a0f1c, #7a1e3a)" },
+  { type: "image", value: "/bg-2.jpg" },
+  { type: "image", value: "/bg-3.jpg" },
+  { type: "image", value: "/bg-4.jpg" },
+  { type: "image", value: "/bg-5.jpg" },
 ];
 
 const NO_MESSAGES = [
@@ -49,18 +49,33 @@ export default function Page() {
   const audioRef = useRef(null);
 
   /* ------------- MUSIC LOGIC ------------- */
-  useEffect(() => {
-    if (!audioRef.current) {
-      audioRef.current = new Audio(MUSIC_PLAYLIST[musicIndex]);
-      audioRef.current.volume = 0.6;
-      audioRef.current.loop = false;
-      audioRef.current.muted = true; // autoplay safe
+useEffect(() => {
+  if (!audioRef.current) {
+    audioRef.current = new Audio(MUSIC_PLAYLIST[musicIndex]);
+    audioRef.current.volume = 0.6;
+    audioRef.current.loop = false;
+
+    // iOS-safe: play muted first
+    audioRef.current.muted = true;
+    audioRef.current.play().catch(() => {});
+
+    // Once user clicks anywhere, unmute
+    const handleInteraction = () => {
+      audioRef.current.muted = false;
       audioRef.current.play().catch(() => {});
-      audioRef.current.onended = () => {
-        setMusicIndex((i) => (i + 1) % MUSIC_PLAYLIST.length);
-      };
-    }
-  }, []);
+      window.removeEventListener("touchstart", handleInteraction);
+      window.removeEventListener("click", handleInteraction);
+    };
+
+    window.addEventListener("touchstart", handleInteraction);
+    window.addEventListener("click", handleInteraction);
+
+    audioRef.current.onended = () => {
+      setMusicIndex((i) => (i + 1) % MUSIC_PLAYLIST.length);
+    };
+  }
+}, []);
+
 
   useEffect(() => {
     if (!audioRef.current) return;
@@ -80,7 +95,7 @@ export default function Page() {
   useEffect(() => {
     const timer = setInterval(() => {
       setBgIndex((i) => (i + 1) % BACKGROUNDS.length);
-    }, 1000);
+    }, 10000);
     return () => clearInterval(timer);
   }, []);
 
@@ -120,14 +135,14 @@ export default function Page() {
     <div className="min-h-screen w-screen flex flex-col items-center justify-center relative overflow-hidden">
       {/* BACKGROUND */}
       <div
-  className="absolute inset-0 z-0 transition-all duration-1000"
-  style={{
-    background:
-      BACKGROUNDS[bgIndex].type === "image"
-        ? `url(${BACKGROUNDS[bgIndex].value}) no-repeat center center / cover`
-        : BACKGROUNDS[bgIndex].value,
-  }}
-/>
+        className="absolute inset-0 z-0 transition-all duration-1000"
+        style={{
+          background:
+            BACKGROUNDS[bgIndex].type === "image"
+              ? `url(${BACKGROUNDS[bgIndex].value}) no-repeat center center / cover`
+              : BACKGROUNDS[bgIndex].value,
+        }}
+      />
 
       {/* MUSIC CONTROL */}
       <div className="absolute top-4 right-4 flex gap-2 z-50">
